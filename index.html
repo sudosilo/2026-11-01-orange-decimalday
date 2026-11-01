@@ -35,7 +35,6 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 </head>
 <body>
 <h1>Decimal Day Clock</h1>
-<div class="sub">Eight clean base 100 blocks, then a pocket.</div>
 
 <div class="card">
 <div class="head"><div class="label" id="phase">Block</div><button class="ibtn" id="ib1" aria-label="About the decimal clock">i</button></div>
@@ -44,8 +43,8 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="track"><div class="tmain"></div><div class="tpocket"></div><div class="needle" id="needle"></div></div>
 <div class="info" id="in1">
 <p>One day is 86,400 SI seconds. Each tick is one SI second, the same length as today. A minute is 100 ticks. A block is 100 minutes, which is 10,000 ticks.</p>
-<p>The day starts at your local midnight. Blocks 0 through 7 fill 80,000 ticks. The last 6,400 ticks of the day are the pocket, counted as 64 minutes of 100 ticks.</p>
-<p><span class="special">The pocket is the special time.</span> It starts at 10:13:20 PM on the old clock. It sits at the end of the day where people are usually done, so anything done inside it is on purpose.</p>
+<p>The day starts at your local midnight. Blocks 0 through 7 fill 80,000 ticks. The last 6,400 ticks of the day are the short hour, counted as 64 minutes of 100 ticks.</p>
+<p><span class="special">The short hour is the special hour.</span> By default it starts at 10:13:20 PM on the old clock, at the end of the day where people are usually done, so anything done inside it is on purpose.</p>
 </div>
 </div>
 
@@ -101,9 +100,9 @@ function tick(){
     var p=ti-80000;
     var pm=Math.floor(p/100);
     var ps=p%100;
-    phase.textContent='Pocket';
-    clock.textContent='P.'+pad(pm,2)+'.'+pad(ps,2);
-    document.getElementById('r1').textContent='ticks left in pocket '+(6400-p);
+    phase.textContent='Short hour';
+    clock.textContent='S.'+pad(pm,2)+'.'+pad(ps,2);
+    document.getElementById('r1').textContent='ticks left in short hour '+(6400-p);
   }
   document.getElementById('needle').style.left=(frac*100)+'%';
   document.getElementById('daycount').textContent=frac.toFixed(5);
