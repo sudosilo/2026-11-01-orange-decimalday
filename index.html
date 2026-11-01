@@ -37,7 +37,10 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 .cal-nav .mid{flex:1;white-space:pre-line;line-height:1.4;text-align:center;font-family:ui-monospace,monospace;font-size:13px;color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
 .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:ui-monospace,monospace;font-size:12px;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ink)}
+.cell.mrow{border-top:2px solid #8a8576}
 .cell.orbit{border-top:3px solid var(--pocket)}
+.cell.sdec{background:#f0c9ae}
+.cell.today.sdec{background:var(--main)}
 .cell.shortwk{background:var(--pocketbg)}
 .cell.today.shortwk{background:var(--main)}
 .cell.today{background:var(--main);color:#fff;border-color:var(--main)}
@@ -101,8 +104,8 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="card" id="calcard">
 <div class="head"><div class="label">Day notepad</div><button class="ibtn" id="ib4" aria-label="About the day notepad">i</button></div>
 <div class="info" id="in4">
-<p>Days are counted up from January 1, 1970, using your local date. An orbit is one trip around the sun, 365 or 366 days. Each orbit is split into weeks of 100 days: three full weeks, then a short week that holds the leftover 65 or 66 days. The short week is where the year's remainder goes, so every orbit starts over at day 0 with whole numbers.</p>
-<p>Each cell shows its day within the week. The orange bar marks day 0 of a new orbit, and the tinted cells are the short week. There are no months and no 7 day weeks.</p>
+<p>Days are counted up from January 1, 1970, using your local date. An orbit is one trip around the sun, 365 or 366 days. A decaday is 10 days, a month is 30 days, and a hectoday is 100 days. Each orbit is 12 months, 360 days, then a short decaday of 5 or 6 days that holds the leftover, so every orbit starts over at day 0 with whole numbers.</p>
+<p>Each page is one hectoday: three full ones, then a short hectoday of 65 or 66 days. Each row is a decaday. A darker line starts each month, which is every 3 rows. Tinted cells are the short hectoday, and the darker tint is the short decaday. The orange bar marks day 0 of a new orbit. There are no 7 day weeks.</p>
 <p>Tap a day to write a note. A dot marks days with a note. Notes are saved in this browser on this device only.</p>
 </div>
 <div class="cal-nav"><button class="btn" id="cprev" aria-label="Previous page">&lt;</button><div class="mid" id="chead"></div><button class="btn" id="cnext" aria-label="Next page">&gt;</button></div>
@@ -261,7 +264,8 @@ setInterval(tick,100);
   function locate(d){
     var o=orbitOf(d),din=d-orbitStart(o);
     var w=Math.min(3,Math.floor(din/100));
-    return {o:o,din:din,w:w,cell:din-w*100};
+    var inm=din<360;
+    return {o:o,din:din,w:w,cell:din-w*100,m:inm?Math.floor(din/30):12,dm:inm?Math.floor((din%30)/10):null,dd:inm?din%10:din-360};
   }
   function pageInfo(pi){
     var o=Math.floor(pi/4),w=pi%4;
@@ -283,7 +287,10 @@ setInterval(tick,100);
       var d=pg.base+i;
       var b=document.createElement('button');
       var cls='cell';
+      var dino=d-orbitStart(pg.o);
       if(pg.w===3)cls+=' shortwk';
+      if(dino>=360)cls+=' sdec';
+      else if(Math.floor(dino/10)%3===0)cls+=' mrow';
       if(d===today)cls+=' today';
       if(d===sel)cls+=' sel';
       if(notes[d])cls+=' note';
@@ -294,13 +301,14 @@ setInterval(tick,100);
       b.setAttribute('aria-label','Day '+d);
       grid.appendChild(b);
     }
-    head.textContent='Orbit '+pg.o+', week '+pg.w+' of 3'+(pg.w===3?', short week':'')+'\ndays '+pg.base+' to '+(pg.base+pg.count-1);
+    head.textContent='Orbit '+pg.o+', hectoday '+pg.w+' of 3'+(pg.w===3?', short hectoday':'')+'\ndays '+pg.base+' to '+(pg.base+pg.count-1);
   }
   function renderEditor(){
     document.getElementById('cdn').textContent='Day '+sel+(sel===today?' (today)':'');
     var l=locate(sel);
     var civil=new Date(sel*86400000).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'});
-    document.getElementById('cmeta').textContent='Orbit '+l.o+', week '+l.w+' of 3'+(l.w===3?' (short week)':'')+', cell '+String(l.cell).padStart(2,'0')+'. Day '+l.din+' of the orbit. Old calendar: '+civil+'.';
+    var where=(l.m<12)?('Month '+l.m+' of 11, decaday '+l.dm+' of 2, day '+l.dd+'.'):('Short decaday, day '+l.dd+'.');
+    document.getElementById('cmeta').textContent='Orbit '+l.o+'. Hectoday '+l.w+' of 3'+(l.w===3?' (short)':'')+', cell '+String(l.cell).padStart(2,'0')+'. '+where+' Day '+l.din+' of the orbit. Old calendar: '+civil+'.';
     ta.value=notes[sel]||'';
     document.getElementById('cstate').textContent=notes[sel]?'Saved on this device':'';
   }
