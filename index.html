@@ -63,6 +63,16 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 </div>
 
 <div class="card">
+<div class="head"><div class="label">Since 1970</div><button class="ibtn" id="ib3" aria-label="About the 1970 count">i</button></div>
+<div class="big plain" id="unixdays">0.00000</div>
+<div class="row"><span id="unixticks"></span></div>
+<div class="info" id="in3">
+<p>Computers count time as a running total of ticks since midnight UTC on January 1, 1970. That total is the calendar computers use. No hours, no zones, no daylight saving.</p>
+<p>The top number is whole days since then, with the part of the day as a decimal. The line under it is the same moment as a plain tick count.</p>
+</div>
+</div>
+
+<div class="card">
 <div class="head"><div class="label">Day count</div></div>
 <div class="big plain" id="daycount">0.00000</div>
 <div class="row"><span id="milli"></span></div>
@@ -77,6 +87,7 @@ function wire(b,p){
 }
 wire('ib1','in1');
 wire('ib2','in2');
+wire('ib3','in3');
 function tick(){
   var now=new Date();
   var start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
@@ -107,6 +118,9 @@ function tick(){
   document.getElementById('needle').style.left=(frac*100)+'%';
   document.getElementById('daycount').textContent=frac.toFixed(5);
   document.getElementById('milli').textContent=Math.floor(frac*1000)+' millidays, '+(frac*100).toFixed(2)+' centidays';
+  var ut=now.getTime()/1000;
+  document.getElementById('unixdays').textContent=(ut/86400).toFixed(5);
+  document.getElementById('unixticks').textContent=Math.floor(ut).toLocaleString('en-US')+' ticks';
   var zone=document.getElementById('tz').value||undefined;
   var tf=new Intl.DateTimeFormat('en-US',{timeZone:zone,hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
   var df=new Intl.DateTimeFormat('en-US',{timeZone:zone,weekday:'long',month:'long',day:'numeric',year:'numeric'});
