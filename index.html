@@ -12,45 +12,69 @@ body.pocket{background:var(--pocketbg)}
 h1{font-size:18px;margin:0 0 4px;font-weight:600}
 .sub{color:var(--mute);font-size:13px;margin-bottom:24px;text-align:center}
 .card{width:100%;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
-.label{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.label{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
 .big{font-family:ui-monospace,monospace;font-size:52px;font-weight:700;letter-spacing:.02em;line-height:1}
 .big.main{color:var(--main)}
 .big.pocket{color:var(--pocket)}
+.big.plain{font-size:34px;color:var(--ink)}
 .row{display:flex;gap:10px;margin-top:10px;font-size:13px;color:var(--mute);font-family:ui-monospace,monospace}
-.bar{height:14px;background:#ece8dc;border-radius:7px;overflow:hidden;margin-top:12px;display:flex}
-.seg{height:100%}
-.fill{height:100%;width:0}
 .track{position:relative;height:18px;background:#ece8dc;border-radius:9px;overflow:hidden;margin-top:12px}
 .tmain{position:absolute;left:0;top:0;height:100%;width:92.5926%;background:#cfe3d8}
 .tpocket{position:absolute;right:0;top:0;height:100%;width:7.4074%;background:#f0c9ae}
 .needle{position:absolute;top:0;width:3px;height:100%;background:var(--ink)}
-.note{font-size:13px;color:var(--mute);line-height:1.5}
+.ibtn{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--mute);font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:14px;cursor:pointer;padding:0;line-height:1}
+.ibtn:active{background:#ece8dc}
+.info{display:none;margin-top:14px;padding:14px;background:#faf8f2;border:1px solid var(--line);border-radius:10px;font-size:13px;color:var(--mute);line-height:1.55}
+.info.open{display:block}
+.info p{margin:0 0 10px}
+.info p:last-child{margin-bottom:0}
 .special{color:var(--pocket);font-weight:600}
 </style>
 </head>
 <body>
 <h1>Decimal Day Clock</h1>
-<div class="sub">One day is 86,400 SI seconds. Eight clean base 100 blocks, then a pocket.</div>
+<div class="sub">Eight clean base 100 blocks, then a pocket.</div>
 
 <div class="card">
-<div class="label" id="phase">Block</div>
+<div class="head"><div class="label" id="phase">Block</div><button class="ibtn" id="ib1" aria-label="About the decimal clock">i</button></div>
 <div class="big main" id="clock">0.00.00</div>
-<div class="row"><span id="r1"></span><span id="r2"></span></div>
+<div class="row"><span id="r1"></span></div>
 <div class="track"><div class="tmain"></div><div class="tpocket"></div><div class="needle" id="needle"></div></div>
+<div class="info" id="in1">
+<p>One day is 86,400 SI seconds. Each tick is one SI second, the same length as today. A minute is 100 ticks. A block is 100 minutes, which is 10,000 ticks.</p>
+<p>The day starts at your local midnight. Blocks 0 through 7 fill 80,000 ticks. The last 6,400 ticks of the day are the pocket, counted as 64 minutes of 100 ticks.</p>
+<p><span class="special">The pocket is the special time.</span> It starts at 10:13:20 PM on the old clock. It sits at the end of the day where people are usually done, so anything done inside it is on purpose.</p>
+</div>
 </div>
 
 <div class="card">
-<div class="label">Day count</div>
-<div class="big" style="font-size:34px" id="daycount">0.00000</div>
-<div class="row"><span id="milli"></span></div>
+<div class="head"><div class="label">Normal clock</div><button class="ibtn" id="ib2" aria-label="Why the normal clock is flawed">i</button></div>
+<div class="big plain" id="normal">0:00:00 AM</div>
+<div class="row"><span id="normaldate"></span></div>
+<div class="info" id="in2">
+<p>The normal clock mixes bases. Seconds and minutes count to 60, hours count to 24, and days count to 7. Every addition needs a carry in a different base. 2h 45m plus 1h 30m only works if you stop and convert.</p>
+<p>The units were set by habit from Babylonian base 60 and the Egyptian 24 hour split, long before anyone could measure time. The second was fitted to them later.</p>
+<p>It also lies about the sun. Time zones and daylight saving move the clock an hour while the sun stays put, so the same moment has a different number depending on where you stand and what month it is.</p>
+<p>The decimal day has one base. Every unit is 100 of the one below it, so math is moving a decimal point. 3.50.00 plus 1.25.00 is 4.75.00. Durations add, subtract and scale in your head. Fast math makes planning, time management and setting expectations easier, and less friction in the day is better for the soul.</p>
+</div>
 </div>
 
-<div class="card note">
-Block: 10,000 ticks. Minute: 100 ticks. Tick: one SI second, the same length as today. The day starts at your local midnight. Blocks 0 through 7 fill 80,000 ticks. The last 6,400 ticks of the day are the pocket, counted as 64 minutes of 100 ticks. <span class="special">The pocket is the special time.</span> It starts at 22:13:20 on the old clock.
+<div class="card">
+<div class="head"><div class="label">Day count</div></div>
+<div class="big plain" id="daycount">0.00000</div>
+<div class="row"><span id="milli"></span></div>
 </div>
 
 <script>
 function pad(n,w){return String(n).padStart(w,'0')}
+function wire(b,p){
+  document.getElementById(b).addEventListener('click',function(){
+    document.getElementById(p).classList.toggle('open');
+  });
+}
+wire('ib1','in1');
+wire('ib2','in2');
 function tick(){
   var now=new Date();
   var start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
@@ -70,7 +94,6 @@ function tick(){
     phase.textContent='Block '+b+' of 0 to 7';
     clock.textContent=b+'.'+pad(m,2)+'.'+pad(s,2);
     document.getElementById('r1').textContent='ticks left in block '+(10000-(ti%10000));
-    document.getElementById('r2').textContent='';
   }else{
     var p=ti-80000;
     var pm=Math.floor(p/100);
@@ -78,11 +101,15 @@ function tick(){
     phase.textContent='Pocket';
     clock.textContent='P.'+pad(pm,2)+'.'+pad(ps,2);
     document.getElementById('r1').textContent='ticks left in pocket '+(6400-p);
-    document.getElementById('r2').textContent='';
   }
   document.getElementById('needle').style.left=(frac*100)+'%';
   document.getElementById('daycount').textContent=frac.toFixed(5);
   document.getElementById('milli').textContent=Math.floor(frac*1000)+' millidays, '+(frac*100).toFixed(2)+' centidays';
+  var h=now.getHours();
+  var ap=h>=12?'PM':'AM';
+  var h12=h%12;if(h12===0)h12=12;
+  document.getElementById('normal').textContent=h12+':'+pad(now.getMinutes(),2)+':'+pad(now.getSeconds(),2)+' '+ap;
+  document.getElementById('normaldate').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 }
 tick();
 setInterval(tick,100);
