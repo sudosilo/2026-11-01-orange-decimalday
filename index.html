@@ -53,7 +53,8 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="head"><div class="label">Normal clock</div><button class="ibtn" id="ib2" aria-label="Why the normal clock is flawed">i</button></div>
 <div class="big plain" id="normal">0:00:00 AM</div>
 <div class="row"><span id="normaldate"></span></div>
-<select class="tz" id="tz" aria-label="Time zone for the normal clock"></select>
+<input class="tz" id="tzsearch" type="search" placeholder="Search time zones" autocomplete="off" aria-label="Search time zones">
+<select class="tz" id="tz" aria-label="Time zone for the normal clock" style="margin-top:8px"></select>
 <div class="info" id="in2">
 <p>The normal clock mixes bases. Seconds and minutes count to 60, hours count to 24, and days count to 7. Every addition needs a carry in a different base. 2h 45m plus 1h 30m only works if you stop and convert.</p>
 <p>The units were set by habit from Babylonian base 60 and the Egyptian 24 hour split, long before anyone could measure time. The second was fitted to them later.</p>
@@ -120,16 +121,40 @@ function tick(){
   try{zones=Intl.supportedValuesOf('timeZone').slice()}catch(e){}
   if(zones.indexOf('UTC')<0)zones.unshift('UTC');
   if(zones.indexOf(local)<0)zones.unshift(local);
-  zones.forEach(function(z){
-    var o=document.createElement('option');
-    o.value=z;o.textContent=z.replace(/_/g,' ');
-    sel.appendChild(o);
-  });
+  var search=document.getElementById('tzsearch');
+  function fill(q,keep){
+    sel.innerHTML='';
+    var n=0;
+    zones.forEach(function(z){
+      var label=z.replace(/_/g,' ');
+      if(q&&label.toLowerCase().indexOf(q)<0)return;
+      var o=document.createElement('option');
+      o.value=z;o.textContent=label;
+      sel.appendChild(o);
+      n++;
+    });
+    if(n===0){
+      var e=document.createElement('option');
+      e.value='';e.textContent='No match';
+      sel.appendChild(e);
+      return;
+    }
+    if(keep&&zones.indexOf(keep)>=0&&Array.prototype.some.call(sel.options,function(o){return o.value===keep}))sel.value=keep;
+  }
   var saved=null;
   try{saved=localStorage.getItem('decimalday-tz')}catch(e){}
-  sel.value=(saved&&zones.indexOf(saved)>=0)?saved:local;
-  sel.addEventListener('change',function(){
+  var start=(saved&&zones.indexOf(saved)>=0)?saved:local;
+  fill('',start);
+  sel.value=start;
+  function save(){
+    if(!sel.value)return;
     try{localStorage.setItem('decimalday-tz',sel.value)}catch(e){}
+  }
+  sel.addEventListener('change',function(){save();tick();});
+  search.addEventListener('input',function(){
+    var q=search.value.trim().toLowerCase();
+    fill(q,null);
+    if(sel.value){sel.selectedIndex=0;save();}
     tick();
   });
 })();
