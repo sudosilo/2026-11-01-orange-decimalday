@@ -34,10 +34,12 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 .btn{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-size:14px;cursor:pointer}
 .btn:active{background:#ece8dc}
 .cal-nav{display:flex;gap:8px;align-items:center;margin:12px 0}
-.cal-nav .mid{flex:1;text-align:center;font-family:ui-monospace,monospace;font-size:13px;color:var(--ink)}
+.cal-nav .mid{flex:1;white-space:pre-line;line-height:1.4;text-align:center;font-family:ui-monospace,monospace;font-size:13px;color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
 .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:ui-monospace,monospace;font-size:12px;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ink)}
 .cell.orbit{border-top:3px solid var(--pocket)}
+.cell.shortwk{background:var(--pocketbg)}
+.cell.today.shortwk{background:var(--main)}
 .cell.today{background:var(--main);color:#fff;border-color:var(--main)}
 .cell.sel{outline:2px solid var(--ink);outline-offset:1px}
 .cell.note::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--pocket)}
@@ -99,8 +101,8 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="card" id="calcard">
 <div class="head"><div class="label">Day notepad</div><button class="ibtn" id="ib4" aria-label="About the day notepad">i</button></div>
 <div class="info" id="in4">
-<p>Days are counted up from January 1, 1970, using your local date. Each page holds 100 days. The cell shows the last two digits and the page shows the rest, so day 20758 is cell 58 on page 207.</p>
-<p>An orbit is one trip around the sun, 365.2425 days on average. The orange bar on a cell marks the first day of a new orbit. There are no months and no weeks.</p>
+<p>Days are counted up from January 1, 1970, using your local date. An orbit is one trip around the sun, 365 or 366 days. Each orbit is split into weeks of 100 days: three full weeks, then a short week that holds the leftover 65 or 66 days. The short week is where the year's remainder goes, so every orbit starts over at day 0 with whole numbers.</p>
+<p>Each cell shows its day within the week. The orange bar marks day 0 of a new orbit, and the tinted cells are the short week. There are no months and no 7 day weeks.</p>
 <p>Tap a day to write a note. A dot marks days with a note. Notes are saved in this browser on this device only.</p>
 </div>
 <div class="cal-nav"><button class="btn" id="cprev" aria-label="Previous page">&lt;</button><div class="mid" id="chead"></div><button class="btn" id="cnext" aria-label="Next page">&gt;</button></div>
@@ -256,50 +258,62 @@ setInterval(tick,100);
   function todayNum(){var n=new Date();return Math.floor(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())/86400000);}
   function orbitOf(d){return Math.floor(d/YEAR);}
   function orbitStart(o){return Math.ceil(o*YEAR);}
+  function locate(d){
+    var o=orbitOf(d),din=d-orbitStart(o);
+    var w=Math.min(3,Math.floor(din/100));
+    return {o:o,din:din,w:w,cell:din-w*100};
+  }
+  function pageInfo(pi){
+    var o=Math.floor(pi/4),w=pi%4;
+    var len=orbitStart(o+1)-orbitStart(o);
+    var base=orbitStart(o)+w*100;
+    var count=w<3?100:len-300;
+    return {o:o,w:w,base:base,count:count};
+  }
   var today=todayNum();
   var sel=today;
-  var page=Math.floor(today/100);
+  var pi=(function(){var l=locate(today);return l.o*4+l.w;})();
   var grid=document.getElementById('cgrid');
   var head=document.getElementById('chead');
   var ta=document.getElementById('cnote');
   function renderGrid(){
     grid.innerHTML='';
-    var base=page*100;
-    for(var i=0;i<100;i++){
-      var d=base+i;
+    var pg=pageInfo(pi);
+    for(var i=0;i<pg.count;i++){
+      var d=pg.base+i;
       var b=document.createElement('button');
       var cls='cell';
+      if(pg.w===3)cls+=' shortwk';
       if(d===today)cls+=' today';
       if(d===sel)cls+=' sel';
       if(notes[d])cls+=' note';
-      if(d>=0&&orbitOf(d)!==orbitOf(d-1))cls+=' orbit';
+      if(pg.w===0&&i===0)cls+=' orbit';
       b.className=cls;
       b.textContent=String(i).padStart(2,'0');
       b.setAttribute('data-d',d);
       b.setAttribute('aria-label','Day '+d);
       grid.appendChild(b);
     }
-    var o1=orbitOf(base),o2=orbitOf(base+99);
-    head.textContent=base+' to '+(base+99)+' | orbit '+(o1===o2?o1:o1+' and '+o2);
+    head.textContent='Orbit '+pg.o+', week '+pg.w+' of 3'+(pg.w===3?', short week':'')+'\ndays '+pg.base+' to '+(pg.base+pg.count-1);
   }
   function renderEditor(){
     document.getElementById('cdn').textContent='Day '+sel+(sel===today?' (today)':'');
-    var o=orbitOf(sel);
+    var l=locate(sel);
     var civil=new Date(sel*86400000).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'});
-    document.getElementById('cmeta').textContent='Orbit '+o+', day '+(sel-orbitStart(o))+'. Old calendar: '+civil+'.';
+    document.getElementById('cmeta').textContent='Orbit '+l.o+', week '+l.w+' of 3'+(l.w===3?' (short week)':'')+', cell '+String(l.cell).padStart(2,'0')+'. Day '+l.din+' of the orbit. Old calendar: '+civil+'.';
     ta.value=notes[sel]||'';
     document.getElementById('cstate').textContent=notes[sel]?'Saved on this device':'';
   }
   function go(d){
     if(isNaN(d)||d<0)return;
-    sel=Math.floor(d);page=Math.floor(sel/100);renderGrid();renderEditor();
+    sel=Math.floor(d);var l=locate(sel);pi=l.o*4+l.w;renderGrid();renderEditor();
   }
   grid.addEventListener('click',function(e){
     var t=e.target.closest('.cell');if(!t)return;
     sel=parseInt(t.getAttribute('data-d'),10);renderGrid();renderEditor();
   });
-  document.getElementById('cprev').addEventListener('click',function(){if(page>0){page--;renderGrid();}});
-  document.getElementById('cnext').addEventListener('click',function(){page++;renderGrid();});
+  document.getElementById('cprev').addEventListener('click',function(){if(pi>0){pi--;renderGrid();}});
+  document.getElementById('cnext').addEventListener('click',function(){pi++;renderGrid();});
   document.getElementById('ctoday').addEventListener('click',function(){today=todayNum();go(today);});
   document.getElementById('cgobtn').addEventListener('click',function(){go(parseInt(document.getElementById('cgo').value,10));});
   document.getElementById('cgo').addEventListener('keydown',function(e){if(e.key==='Enter')go(parseInt(this.value,10));});
@@ -316,7 +330,7 @@ setInterval(tick,100);
   wire('ib4','in4');
   setInterval(function(){
     var t=todayNum();
-    if(t!==today){var wasToday=(sel===today);today=t;if(wasToday){sel=today;page=Math.floor(sel/100);}renderGrid();renderEditor();}
+    if(t!==today){var wasToday=(sel===today);today=t;if(wasToday){sel=today;}var l=locate(sel);pi=l.o*4+l.w;renderGrid();renderEditor();}
   },30000);
   renderGrid();renderEditor();
 })();
