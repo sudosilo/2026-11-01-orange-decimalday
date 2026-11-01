@@ -122,12 +122,50 @@ function tick(){
   if(zones.indexOf('UTC')<0)zones.unshift('UTC');
   if(zones.indexOf(local)<0)zones.unshift(local);
   var search=document.getElementById('tzsearch');
+  var aliases={
+    PST:['America/Los_Angeles','America/Vancouver','America/Tijuana'],
+    MST:['America/Denver','America/Phoenix','America/Boise','America/Edmonton'],
+    CST:['America/Chicago','America/Mexico_City','America/Winnipeg'],
+    EST:['America/New_York','America/Toronto','America/Detroit'],
+    AKST:['America/Anchorage'],HST:['Pacific/Honolulu'],
+    AST:['America/Puerto_Rico','America/Halifax'],
+    GMT:['UTC','Europe/London','Africa/Abidjan'],UTC:['UTC'],Z:['UTC'],
+    BST:['Europe/London'],
+    CET:['Europe/Paris','Europe/Berlin','Europe/Madrid','Europe/Rome','Europe/Amsterdam','Europe/Zurich'],
+    EET:['Europe/Athens','Europe/Helsinki','Europe/Kiev','Europe/Kyiv','Africa/Cairo'],
+    WET:['Europe/Lisbon'],MSK:['Europe/Moscow'],
+    IST:['Asia/Kolkata','Asia/Calcutta','Europe/Dublin'],PKT:['Asia/Karachi'],
+    JST:['Asia/Tokyo'],KST:['Asia/Seoul'],SGT:['Asia/Singapore'],HKT:['Asia/Hong_Kong'],
+    AEST:['Australia/Sydney','Australia/Melbourne','Australia/Brisbane'],
+    ACST:['Australia/Adelaide','Australia/Darwin'],AWST:['Australia/Perth'],
+    NZST:['Pacific/Auckland'],SAST:['Africa/Johannesburg'],WAT:['Africa/Lagos'],
+    EAT:['Africa/Nairobi'],CAT:['Africa/Harare']
+  };
+  var alt={PDT:'PST',MDT:'MST',CDT:'CST',EDT:'EST',AKDT:'AKST',ADT:'AST',BST:'BST',CEST:'CET',EEST:'EET',WEST:'WET',AEDT:'AEST',ACDT:'ACST',NZDT:'NZST',
+    PT:'PST',MT:'MST',CT:'CST',ET:'EST',AKT:'AKST',IRST:'IRST'};
+  var nowD=new Date();
+  var abbr={};
+  zones.forEach(function(z){
+    try{
+      var parts=new Intl.DateTimeFormat('en-US',{timeZone:z,timeZoneName:'short'}).formatToParts(nowD);
+      for(var i=0;i<parts.length;i++){if(parts[i].type==='timeZoneName'){abbr[z]=parts[i].value;break;}}
+    }catch(e){}
+  });
+  function labelOf(z){return z.replace(/_/g,' ')+(abbr[z]?' ('+abbr[z]+')':'');}
   function fill(q,keep){
     sel.innerHTML='';
     var n=0;
+    var key=q.toUpperCase();
+    if(alt[key])key=alt[key];
+    var exact=aliases[key]||null;
     zones.forEach(function(z){
-      var label=z.replace(/_/g,' ');
-      if(q&&label.toLowerCase().indexOf(q)<0)return;
+      var label=labelOf(z);
+      if(q){
+        var hit;
+        if(exact){hit=exact.indexOf(z)>=0||(abbr[z]&&abbr[z].toUpperCase()===q.toUpperCase());}
+        else{hit=label.toLowerCase().indexOf(q)>=0;}
+        if(!hit)return;
+      }
       var o=document.createElement('option');
       o.value=z;o.textContent=label;
       sel.appendChild(o);
