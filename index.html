@@ -104,7 +104,7 @@ function tick(){
     var b=Math.floor(ti/10000);
     var m=Math.floor((ti%10000)/100);
     var s=ti%100;
-    phase.textContent='Block '+b+' of 0 to 7';
+    phase.textContent='Block '+b+' of 7';
     clock.textContent=b+'.'+pad(m,2)+'.'+pad(s,2);
     document.getElementById('r1').textContent='ticks left in block '+(10000-(ti%10000));
   }else{
