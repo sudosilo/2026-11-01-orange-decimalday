@@ -99,9 +99,13 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 </div>
 
 <div class="card">
-<div class="head"><div class="label">Day count</div></div>
+<div class="head"><div class="label">Day count</div><button class="ibtn" id="ib5" aria-label="About the day count">i</button></div>
 <div class="big plain" id="daycount">0.00000</div>
 <div class="row"><span id="milli"></span></div>
+<div class="info" id="in5">
+<p>This is how much of the current day has passed. It starts at 0 at your local midnight and climbs toward 1. When it reaches the whole number 1, the day is over and the count resets to 0 for the next day.</p>
+<p>A milliday is one thousandth of a day, 86.4 SI seconds. A centiday is one hundredth of a day. So 0.392 of a day is 392 millidays or 39.2 centidays. The whole number of millidays is the same amount as the decimal day count, just counted in thousandths.</p>
+</div>
 </div>
 
 <div class="card" id="calcard">
@@ -132,6 +136,7 @@ function wire(b,p){
 wire('ib1','in1');
 wire('ib2','in2');
 wire('ib3','in3');
+wire('ib5','in5');
 function tick(){
   var now=new Date();
   var start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
