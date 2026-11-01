@@ -31,6 +31,24 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 .info p:last-child{margin-bottom:0}
 .special{color:var(--pocket);font-weight:600}
 .tz{width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-size:14px}
+.btn{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-size:14px;cursor:pointer}
+.btn:active{background:#ece8dc}
+.cal-nav{display:flex;gap:8px;align-items:center;margin:12px 0}
+.cal-nav .mid{flex:1;text-align:center;font-family:ui-monospace,monospace;font-size:13px;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:ui-monospace,monospace;font-size:12px;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ink)}
+.cell.orbit{border-top:3px solid var(--pocket)}
+.cell.today{background:var(--main);color:#fff;border-color:var(--main)}
+.cell.sel{outline:2px solid var(--ink);outline-offset:1px}
+.cell.note::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--pocket)}
+.cell.today.note::after{background:#fff}
+.goto{display:flex;gap:8px;margin-top:12px}
+.goto input{flex:1;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+.editor{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.editor .dn{font-family:ui-monospace,monospace;font-size:22px;font-weight:700}
+.editor .meta{font-size:13px;color:var(--mute);margin:4px 0 10px;line-height:1.5}
+.editor textarea{width:100%;min-height:120px;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:15px;font-family:system-ui,sans-serif;resize:vertical;color:var(--ink);background:#fff}
+.editor .acts{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -76,6 +94,24 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="head"><div class="label">Day count</div></div>
 <div class="big plain" id="daycount">0.00000</div>
 <div class="row"><span id="milli"></span></div>
+</div>
+
+<div class="card" id="calcard">
+<div class="head"><div class="label">Day notepad</div><button class="ibtn" id="ib4" aria-label="About the day notepad">i</button></div>
+<div class="info" id="in4">
+<p>Days are counted up from January 1, 1970, using your local date. Each page holds 100 days. The cell shows the last two digits and the page shows the rest, so day 20758 is cell 58 on page 207.</p>
+<p>An orbit is one trip around the sun, 365.2425 days on average. The orange bar on a cell marks the first day of a new orbit. There are no months and no weeks.</p>
+<p>Tap a day to write a note. A dot marks days with a note. Notes are saved in this browser on this device only.</p>
+</div>
+<div class="cal-nav"><button class="btn" id="cprev" aria-label="Previous page">&lt;</button><div class="mid" id="chead"></div><button class="btn" id="cnext" aria-label="Next page">&gt;</button></div>
+<div class="grid" id="cgrid"></div>
+<div class="goto"><input id="cgo" type="number" inputmode="numeric" placeholder="Go to day number"><button class="btn" id="cgobtn">Go</button><button class="btn" id="ctoday">Today</button></div>
+<div class="editor" id="ceditor">
+<div class="dn" id="cdn"></div>
+<div class="meta" id="cmeta"></div>
+<textarea id="cnote" placeholder="Write a note for this day"></textarea>
+<div class="acts"><span id="cstate"></span><button class="btn" id="cclear">Clear note</button></div>
+</div>
 </div>
 
 <script>
@@ -211,6 +247,79 @@ function tick(){
 })();
 tick();
 setInterval(tick,100);
+(function(){
+  var YEAR=365.2425;
+  var notes={};
+  var KEY='decimalday-notes';
+  try{notes=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){notes={}}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify(notes));return true}catch(e){return false}}
+  function todayNum(){var n=new Date();return Math.floor(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())/86400000);}
+  function orbitOf(d){return Math.floor(d/YEAR);}
+  function orbitStart(o){return Math.ceil(o*YEAR);}
+  var today=todayNum();
+  var sel=today;
+  var page=Math.floor(today/100);
+  var grid=document.getElementById('cgrid');
+  var head=document.getElementById('chead');
+  var ta=document.getElementById('cnote');
+  function renderGrid(){
+    grid.innerHTML='';
+    var base=page*100;
+    for(var i=0;i<100;i++){
+      var d=base+i;
+      var b=document.createElement('button');
+      var cls='cell';
+      if(d===today)cls+=' today';
+      if(d===sel)cls+=' sel';
+      if(notes[d])cls+=' note';
+      if(d>=0&&orbitOf(d)!==orbitOf(d-1))cls+=' orbit';
+      b.className=cls;
+      b.textContent=String(i).padStart(2,'0');
+      b.setAttribute('data-d',d);
+      b.setAttribute('aria-label','Day '+d);
+      grid.appendChild(b);
+    }
+    var o1=orbitOf(base),o2=orbitOf(base+99);
+    head.textContent=base+' to '+(base+99)+' | orbit '+(o1===o2?o1:o1+' and '+o2);
+  }
+  function renderEditor(){
+    document.getElementById('cdn').textContent='Day '+sel+(sel===today?' (today)':'');
+    var o=orbitOf(sel);
+    var civil=new Date(sel*86400000).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    document.getElementById('cmeta').textContent='Orbit '+o+', day '+(sel-orbitStart(o))+'. Old calendar: '+civil+'.';
+    ta.value=notes[sel]||'';
+    document.getElementById('cstate').textContent=notes[sel]?'Saved on this device':'';
+  }
+  function go(d){
+    if(isNaN(d)||d<0)return;
+    sel=Math.floor(d);page=Math.floor(sel/100);renderGrid();renderEditor();
+  }
+  grid.addEventListener('click',function(e){
+    var t=e.target.closest('.cell');if(!t)return;
+    sel=parseInt(t.getAttribute('data-d'),10);renderGrid();renderEditor();
+  });
+  document.getElementById('cprev').addEventListener('click',function(){if(page>0){page--;renderGrid();}});
+  document.getElementById('cnext').addEventListener('click',function(){page++;renderGrid();});
+  document.getElementById('ctoday').addEventListener('click',function(){today=todayNum();go(today);});
+  document.getElementById('cgobtn').addEventListener('click',function(){go(parseInt(document.getElementById('cgo').value,10));});
+  document.getElementById('cgo').addEventListener('keydown',function(e){if(e.key==='Enter')go(parseInt(this.value,10));});
+  ta.addEventListener('input',function(){
+    var v=ta.value;
+    if(v.trim()===''){delete notes[sel];}else{notes[sel]=v;}
+    var ok=persist();
+    document.getElementById('cstate').textContent=notes[sel]?(ok?'Saved on this device':'Could not save on this device'):'';
+    renderGrid();
+  });
+  document.getElementById('cclear').addEventListener('click',function(){
+    delete notes[sel];persist();ta.value='';renderGrid();renderEditor();
+  });
+  wire('ib4','in4');
+  setInterval(function(){
+    var t=todayNum();
+    if(t!==today){var wasToday=(sel===today);today=t;if(wasToday){sel=today;page=Math.floor(sel/100);}renderGrid();renderEditor();}
+  },30000);
+  renderGrid();renderEditor();
+})();
 </script>
 </body>
 </html>
