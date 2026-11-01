@@ -37,6 +37,9 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 .cal-nav .mid{flex:1;white-space:pre-line;line-height:1.4;text-align:center;font-family:ui-monospace,monospace;font-size:13px;color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
 .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:ui-monospace,monospace;font-size:12px;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ink)}
+.cell{flex-direction:column;line-height:1.15}
+.cell small{font-size:8px;color:var(--mute);margin-top:1px}
+.cell.today small{color:#dff0e6}
 .cell.mrow{border-top:2px solid #8a8576}
 .cell.orbit{border-top:3px solid var(--pocket)}
 .cell.sdec{background:#f0c9ae}
@@ -106,7 +109,7 @@ h1{font-size:18px;margin:0 0 4px;font-weight:600}
 <div class="info" id="in4">
 <p>Days are counted up from January 1, 1970, using your local date. An orbit is one trip around the sun, 365 or 366 days. A decaday is 10 days, a month is 30 days, and a hectoday is 100 days. Each orbit is 12 months, 360 days, then a short decaday of 5 or 6 days that holds the leftover, so every orbit starts over at day 0 with whole numbers.</p>
 <p>Each page is one hectoday: three full ones, then a short hectoday of 65 or 66 days. Each row is a decaday. A darker line starts each month, which is every 3 rows. Tinted cells are the short hectoday, and the darker tint is the short decaday. The orange bar marks day 0 of a new orbit. There are no 7 day weeks.</p>
-<p>Tap a day to write a note. A dot marks days with a note. Notes are saved in this browser on this device only.</p>
+<p>The small number under each day is the old calendar month and day, for correlation. Tap a day to write a note. A dot marks days with a note. Notes are saved in this browser on this device only.</p>
 </div>
 <div class="cal-nav"><button class="btn" id="cprev" aria-label="Previous page">&lt;</button><div class="mid" id="chead"></div><button class="btn" id="cnext" aria-label="Next page">&gt;</button></div>
 <div class="grid" id="cgrid"></div>
@@ -280,6 +283,7 @@ setInterval(tick,100);
   var grid=document.getElementById('cgrid');
   var head=document.getElementById('chead');
   var ta=document.getElementById('cnote');
+  function fmtd(d){return new Date(d*86400000).toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});}
   function renderGrid(){
     grid.innerHTML='';
     var pg=pageInfo(pi);
@@ -296,12 +300,13 @@ setInterval(tick,100);
       if(notes[d])cls+=' note';
       if(pg.w===0&&i===0)cls+=' orbit';
       b.className=cls;
-      b.textContent=String(i).padStart(2,'0');
+      var gd=new Date(d*86400000);
+      b.innerHTML='<span>'+String(i).padStart(2,'0')+'</span><small>'+(gd.getUTCMonth()+1)+'/'+gd.getUTCDate()+'</small>';
       b.setAttribute('data-d',d);
       b.setAttribute('aria-label','Day '+d);
       grid.appendChild(b);
     }
-    head.textContent='Orbit '+pg.o+', hectoday '+pg.w+' of 3'+(pg.w===3?', short hectoday':'')+'\ndays '+pg.base+' to '+(pg.base+pg.count-1);
+    head.textContent='Orbit '+pg.o+', hectoday '+pg.w+' of 3'+(pg.w===3?', short hectoday':'')+'\ndays '+pg.base+' to '+(pg.base+pg.count-1)+'\nold calendar '+fmtd(pg.base)+' to '+fmtd(pg.base+pg.count-1);
   }
   function renderEditor(){
     document.getElementById('cdn').textContent='Day '+sel+(sel===today?' (today)':'');
