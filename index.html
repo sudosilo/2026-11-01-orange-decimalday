@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decimal Day Clock</title>
+<style>
+:root{--bg:#f6f4ee;--ink:#1b1b1b;--mute:#6b6b6b;--line:#d8d4c7;--main:#2a6f4f;--pocket:#b4501e;--pocketbg:#fbeee3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
+body.pocket{background:var(--pocketbg)}
+h1{font-size:18px;margin:0 0 4px;font-weight:600}
+.sub{color:var(--mute);font-size:13px;margin-bottom:24px;text-align:center}
+.card{width:100%;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.label{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.big{font-family:ui-monospace,monospace;font-size:52px;font-weight:700;letter-spacing:.02em;line-height:1}
+.big.main{color:var(--main)}
+.big.pocket{color:var(--pocket)}
+.row{display:flex;gap:10px;margin-top:10px;font-size:13px;color:var(--mute);font-family:ui-monospace,monospace}
+.bar{height:14px;background:#ece8dc;border-radius:7px;overflow:hidden;margin-top:12px;display:flex}
+.seg{height:100%}
+.fill{height:100%;width:0}
+.track{position:relative;height:18px;background:#ece8dc;border-radius:9px;overflow:hidden;margin-top:12px}
+.tmain{position:absolute;left:0;top:0;height:100%;width:92.5926%;background:#cfe3d8}
+.tpocket{position:absolute;right:0;top:0;height:100%;width:7.4074%;background:#f0c9ae}
+.needle{position:absolute;top:0;width:3px;height:100%;background:var(--ink)}
+.note{font-size:13px;color:var(--mute);line-height:1.5}
+.special{color:var(--pocket);font-weight:600}
+</style>
+</head>
+<body>
+<h1>Decimal Day Clock</h1>
+<div class="sub">One day is 86,400 SI seconds. Eight clean base 100 blocks, then a pocket.</div>
+
+<div class="card">
+<div class="label" id="phase">Block</div>
+<div class="big main" id="clock">0.00.00</div>
+<div class="row"><span id="r1"></span><span id="r2"></span></div>
+<div class="track"><div class="tmain"></div><div class="tpocket"></div><div class="needle" id="needle"></div></div>
+</div>
+
+<div class="card">
+<div class="label">Day count</div>
+<div class="big" style="font-size:34px" id="daycount">0.00000</div>
+<div class="row"><span id="milli"></span></div>
+</div>
+
+<div class="card note">
+Block: 10,000 ticks. Minute: 100 ticks. Tick: one SI second, the same length as today. The day starts at your local midnight. Blocks 0 through 7 fill 80,000 ticks. The last 6,400 ticks of the day are the pocket, counted as 64 minutes of 100 ticks. <span class="special">The pocket is the special time.</span> It starts at 22:13:20 on the old clock.
+</div>
+
+<script>
+function pad(n,w){return String(n).padStart(w,'0')}
+function tick(){
+  var now=new Date();
+  var start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+  var frac=(now-start)/(end-start);
+  var t=frac*86400;
+  var ti=Math.floor(t);
+  var clock=document.getElementById('clock');
+  var phase=document.getElementById('phase');
+  var pocket=ti>=80000;
+  document.body.classList.toggle('pocket',pocket);
+  clock.className='big '+(pocket?'pocket':'main');
+  if(!pocket){
+    var b=Math.floor(ti/10000);
+    var m=Math.floor((ti%10000)/100);
+    var s=ti%100;
+    phase.textContent='Block '+b+' of 0 to 7';
+    clock.textContent=b+'.'+pad(m,2)+'.'+pad(s,2);
+    document.getElementById('r1').textContent='ticks left in block '+(10000-(ti%10000));
+    document.getElementById('r2').textContent='';
+  }else{
+    var p=ti-80000;
+    var pm=Math.floor(p/100);
+    var ps=p%100;
+    phase.textContent='Pocket';
+    clock.textContent='P.'+pad(pm,2)+'.'+pad(ps,2);
+    document.getElementById('r1').textContent='ticks left in pocket '+(6400-p);
+    document.getElementById('r2').textContent='';
+  }
+  document.getElementById('needle').style.left=(frac*100)+'%';
+  document.getElementById('daycount').textContent=frac.toFixed(5);
+  document.getElementById('milli').textContent=Math.floor(frac*1000)+' millidays, '+(frac*100).toFixed(2)+' centidays';
+}
+tick();
+setInterval(tick,100);
+</script>
+</body>
+</html>
